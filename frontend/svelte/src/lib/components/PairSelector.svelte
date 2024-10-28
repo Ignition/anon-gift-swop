@@ -90,6 +90,16 @@
     justify-content: space-between;
   }
 
+  .pair-item span:first-child {
+    justify-content: left;
+  }
+
+  .pair-item span:nth-child(3) {
+    justify-content: left;
+    margin-right: 10px;
+
+  }
+
   .pair-item:last-child {
     border-bottom: none;
   }
@@ -98,6 +108,8 @@
     font-size: 18px;
     flex: 1;
     color: #333;
+    display: flex;
+    justify-content: center;
   }
 
 .delete-button {
@@ -118,12 +130,7 @@
 
 .pair-name {
   flex: 1; 
-  text-align: center;
   color: #333;
-}
-
-.pair-separator {
-  margin: 0 10px; 
 }
 
 </style>
