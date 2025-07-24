@@ -1,3 +1,4 @@
 import { writable } from 'svelte/store';
-export const selection = writable(new Set());
 
+/** @type {import('svelte/store').Writable<Set<number>>} */
+export const selection = writable(new Set());

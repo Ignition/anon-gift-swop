@@ -2,11 +2,17 @@ use crate::assignment::AssignmentPair;
 use crate::default_map::DefaultMap;
 pub(crate) trait SolutionWalker {
     type Result;
-    fn visit(&mut self, selection: &Vec<usize>, weight: f64) -> bool;
+    fn visit(&mut self, selection: &[usize], weight: f64) -> bool;
     fn result(&self) -> Self::Result;
 }
 
-fn walk_solutions<T>(current: usize, current_weight: f64, weights: &DefaultMap<AssignmentPair, f64>, buffer: &mut Vec<usize>, visitor: &mut T) -> bool
+fn walk_solutions<T>(
+    current: usize,
+    current_weight: f64,
+    weights: &DefaultMap<AssignmentPair, f64>,
+    buffer: &mut Vec<usize>,
+    visitor: &mut T,
+) -> bool
 where
     T: SolutionWalker,
 {
@@ -42,10 +48,13 @@ where
     }
 }
 
-pub fn apply_walker<T>(weights: &DefaultMap<AssignmentPair, f64>, buffer: &mut Vec<usize>, walker: &mut T) -> ()
-where
+#[allow(clippy::module_name_repetitions)] // Walker is the core algorithm
+pub fn apply_walker<T>(
+    weights: &DefaultMap<AssignmentPair, f64>,
+    buffer: &mut Vec<usize>,
+    walker: &mut T,
+) where
     T: SolutionWalker,
 {
     walk_solutions(0, 1.0, weights, buffer, walker);
 }
-

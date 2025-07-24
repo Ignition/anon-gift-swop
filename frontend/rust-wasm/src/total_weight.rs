@@ -8,7 +8,7 @@ pub struct TotalWeight {
 impl SolutionWalker for TotalWeight {
     type Result = f64;
 
-    fn visit(&mut self, _selection: &Vec<usize>, weight: f64) -> bool {
+    fn visit(&mut self, _selection: &[usize], weight: f64) -> bool {
         self.total_weight += weight;
         false
     }

@@ -1,18 +1,14 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import DefaultPage from './DefaultPage.svelte';
-    import MessagePage from './MessagePage.svelte';
+	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
+	import DefaultPage from './DefaultPage.svelte';
+	import MessagePage from './MessagePage.svelte';
 
-    let msg = null;
-
-    onMount(() => {
-      const params = new URLSearchParams(window.location.search);
-      msg = params.get('msg');
-    });
+	$: msg = browser ? $page.url.searchParams.get('msg') : null;
 </script>
 
 {#if msg}
-  <MessagePage message={msg} />
+	<MessagePage message={msg} />
 {:else}
-  <DefaultPage />
+	<DefaultPage />
 {/if}

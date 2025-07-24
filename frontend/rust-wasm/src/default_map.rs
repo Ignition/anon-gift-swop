@@ -1,5 +1,5 @@
-use std::hash::Hash;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 #[derive(Debug)]
 pub struct DefaultMap<K, V>
@@ -17,8 +17,9 @@ where
     V: Clone,
 {
     pub fn get(&self, key: &K) -> V {
-        self.map.get(key).cloned().unwrap_or_else(|| self.default_value.clone())
+        self.map
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| self.default_value.clone())
     }
 }
-
-
