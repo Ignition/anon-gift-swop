@@ -1,3 +1,4 @@
 import { writable } from 'svelte/store';
-export const history = writable([]);
 
+/** @type {import('svelte/store').Writable<number[][]>} */
+export const history = writable([]);

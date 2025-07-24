@@ -9,10 +9,10 @@ pub struct ThresholdSelector {
 impl SolutionWalker for ThresholdSelector {
     type Result = Option<Vec<usize>>;
 
-    fn visit(&mut self, selection: &Vec<usize>, weight: f64) -> bool {
+    fn visit(&mut self, selection: &[usize], weight: f64) -> bool {
         self.total_weight += weight;
         if self.total_weight >= self.threshold {
-            self.selection = selection.clone().into();
+            self.selection = Some(selection.to_vec());
             true
         } else {
             false

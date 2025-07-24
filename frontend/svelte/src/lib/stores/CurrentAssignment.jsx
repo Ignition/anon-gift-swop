@@ -1,3 +1,4 @@
 import { writable } from 'svelte/store';
-export const assignment = writable(null);
 
+/** @type {import('svelte/store').Writable<number[] | null>} */
+export const assignment = writable(null);
