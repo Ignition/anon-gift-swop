@@ -881,12 +881,14 @@ body {
 	text-decoration: none;
 	font-size: var(--font-size-sm);
 	font-weight: var(--font-weight-medium);
-	transition: all 0.3s ease;
+	transition:
+		box-shadow 0.3s ease,
+		background-color 0.3s ease,
+		border-color 0.3s ease;
 	backdrop-filter: blur(10px);
 }
 
 .social-link:hover {
-	transform: translateY(-2px);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 

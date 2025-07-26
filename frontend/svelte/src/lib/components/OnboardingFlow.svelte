@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
+	import { devConsole } from '$lib/devConsole';
 
 	export let showOnboarding = true;
 
@@ -47,7 +48,7 @@
 			try {
 				localStorage.setItem('gift-swap-onboarding-seen', 'true');
 			} catch {
-				console.log('Could not save onboarding state to localStorage');
+				devConsole.log('Could not save onboarding state to localStorage');
 			}
 		}
 	}
@@ -57,7 +58,7 @@
 		try {
 			localStorage.setItem('gift-swap-onboarding-seen', 'true');
 		} catch {
-			console.log('Could not save onboarding state to localStorage');
+			devConsole.log('Could not save onboarding state to localStorage');
 		}
 	}
 

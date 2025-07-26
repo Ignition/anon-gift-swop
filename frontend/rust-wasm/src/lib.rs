@@ -17,6 +17,7 @@ mod forbidden_pair;
 mod mcmc_sampler;
 mod threshold_selector;
 mod total_weight;
+mod url_encoding;
 mod walker;
 
 #[cfg(test)]
@@ -29,6 +30,9 @@ mod production_tests;
 mod property_tests;
 
 mod production_optimized;
+
+// Re-export URL encoding functions
+pub use url_encoding::{decode_message_v2, decode_state_v2, encode_message_v2, encode_state_v2};
 
 #[wasm_bindgen]
 extern "C" {

@@ -1,23 +1,73 @@
-<script context="module" lang="ts">
-	export function load({ params }: { params: Record<string, string> }) {
-		return {
-			props: {
-				message: params.msg || ''
-			}
-		};
-	}
-</script>
-
 <script lang="ts">
 	import { versionedUrlUtils, type AssignmentPayload } from '$lib/utils';
+	import { onMount } from 'svelte';
+	import init from '$lib/wasm/rust_wasm.js';
+	import { devConsole } from '$lib/devConsole';
 
 	export let message: string;
 
-	function decodeMessage(encodedMessage: string): AssignmentPayload | null {
-		return versionedUrlUtils.decodeVersionedMessage(encodedMessage);
+	let payload: AssignmentPayload | null = null;
+
+	devConsole.log('🎯 MessagePage component created with message:', message);
+
+	async function decodeMessage(encodedMessage: string): Promise<AssignmentPayload | null> {
+		devConsole.log('🔍 MessagePage.decodeMessage() called with:', encodedMessage);
+		devConsole.log('   Length:', encodedMessage.length);
+		devConsole.log('   Characters:', encodedMessage.split(''));
+
+		// Always try compact decoding first - let Rust handle validation
+		devConsole.log('📦 Trying compact decoding...');
+		try {
+			devConsole.log('📦 Importing compactEncoding module...');
+			const { compactEncoding } = await import('$lib/compactEncoding');
+			devConsole.log('📦 CompactEncoding module imported successfully');
+
+			devConsole.log('📦 Calling compactEncoding.decodeMessage()...');
+			const decoded = compactEncoding.decodeMessage(encodedMessage);
+			devConsole.log('✅ Compact decoding succeeded:', decoded);
+			devConsole.log('   Giver:', decoded.giver);
+			devConsole.log('   Receiver:', decoded.receiver);
+
+			return {
+				giver: decoded.giver,
+				receiver: decoded.receiver
+			};
+		} catch (e) {
+			devConsole.error('❌ Compact decoding failed with error:', e);
+			if (e instanceof Error) {
+				devConsole.error('   Error message:', e.message);
+				devConsole.error('   Error stack:', e.stack);
+			}
+		}
+
+		// Fall back to JSON decoding
+		devConsole.log('Trying JSON decoding...');
+		try {
+			const result = versionedUrlUtils.decodeVersionedMessage(encodedMessage);
+			devConsole.log('JSON decoding result:', result);
+			return result;
+		} catch (e) {
+			devConsole.error('JSON decoding failed:', e);
+			return null;
+		}
 	}
 
-	const payload = decodeMessage(message);
+	onMount(async () => {
+		devConsole.log('🚀 MessagePage onMount called');
+		devConsole.log('🚀 Message prop:', message);
+
+		// Initialize WASM first
+		devConsole.log('🚀 Initializing WASM...');
+		try {
+			await init({});
+			devConsole.log('🚀 WASM initialized successfully');
+		} catch (error) {
+			devConsole.error('🚀 Failed to initialize WASM:', error);
+		}
+
+		payload = await decodeMessage(message);
+		devConsole.log('🚀 Final payload:', payload);
+	});
 </script>
 
 {#if payload}

@@ -16,6 +16,7 @@ help:
 	@echo "Testing & Quality:"
 	@echo "  make test         - Run all tests (frontend + Rust)"
 	@echo "  make test-unit    - Run frontend unit tests only"
+	@echo "  make test-compact-url - Test compact URL encoding system"
 	@echo "  make test-unit-watch - Run frontend unit tests in watch mode"
 	@echo "  make test-rust    - Run Rust/WASM unit tests"
 	@echo "  make test-property - Run Rust property/fuzz tests (100 cases each)"
@@ -71,6 +72,11 @@ test: test-rust
 test-unit:
 	@echo "Running frontend unit tests..."
 	cd frontend/svelte && npm run test:unit
+
+# Test compact URL functionality specifically
+test-compact-url:
+	@echo "Testing compact URL system..."
+	cd frontend/rust-wasm && cargo test url_encoding
 
 # Run frontend unit tests in watch mode
 test-unit-watch:
