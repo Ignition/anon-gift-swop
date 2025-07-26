@@ -7,30 +7,56 @@
 	import { history } from '$lib/stores/AssignmentHistory';
 	import { assignment } from '$lib/stores/CurrentAssignment';
 	import { versionedUrlUtils, urlUtils, type AppState } from '$lib/utils';
+	import { compactEncoding } from '$lib/compactEncoding';
+	import init from '$lib/wasm/rust_wasm.js';
+	import { devConsole } from '$lib/devConsole';
 
 	let href = writable<string>('http://unknown');
+	let wasmInitialized = false;
+
+	// Initialize WASM module and href
+	onMount(async () => {
+		href.update(() => urlUtils.getCurrentUrl());
+
+		try {
+			await init({});
+			wasmInitialized = true;
+		} catch (error) {
+			devConsole.error('Failed to initialize WASM in SaveState:', error);
+		}
+	});
 
 	function updateEncodedUrl(assignment?: number[]): string {
+		const namesArray = $names || [];
+		const forbiddenPairsArray = $pairs ? $pairs.map(([a, b]) => [a, b] as [number, number]) : [];
+		const historyArray = assignment ? [assignment, ...$history] : $history || [];
+
+		// Try compact encoding first if WASM is initialized
+		if (wasmInitialized) {
+			try {
+				return compactEncoding.createStateUrl($href, namesArray, forbiddenPairsArray, historyArray);
+			} catch (e) {
+				devConsole.warn('Compact state encoding failed, falling back to JSON:', e);
+			}
+		}
+
+		// Fallback to JSON encoding
 		const data: AppState = {
-			names: $names || [],
+			names: namesArray,
 			selection: $selection ? Array.from($selection) : [],
 			forbiddenPairs: $pairs
 				? $pairs.map(([index1, index2]: [number, number]) => ({ index1, index2 }))
 				: [],
-			assignmentHistory: assignment ? [assignment, ...$history] : $history || []
+			assignmentHistory: historyArray
 		};
 
 		try {
 			return versionedUrlUtils.createVersionedStateUrl($href, data);
 		} catch (error) {
-			console.error('Failed to create versioned state URL:', error);
+			devConsole.error('Failed to create versioned state URL:', error);
 			return '';
 		}
 	}
-
-	onMount(() => {
-		href.update(() => urlUtils.getCurrentUrl());
-	});
 
 	let encodedUrl = derived([href, names, selection, pairs], () => updateEncodedUrl());
 	let encodedUrl2 = derived([href, assignment], (): string | null =>

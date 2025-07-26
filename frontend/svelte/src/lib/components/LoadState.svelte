@@ -5,8 +5,13 @@
 	import { pairs } from '$lib/stores/ForbiddenPairs';
 	import { history } from '$lib/stores/AssignmentHistory';
 	import { urlLoadingState } from '$lib/stores/LoadingState';
-	import { versionedUrlUtils, loadingUtils, type AppState } from '$lib/utils';
+	import { loadingUtils, type AppState } from '$lib/utils';
+	import { compactEncoding } from '$lib/compactEncoding';
 	import LoadingSpinner from './LoadingSpinner.svelte';
+	import init from '$lib/wasm/rust_wasm.js';
+	import { devConsole } from '$lib/devConsole';
+
+	let wasmInitialized = false;
 
 	function updateStoresFromParams(params: Partial<AppState>): void {
 		if (params.names) {
@@ -27,26 +32,75 @@
 		}
 	}
 
-	onMount((): void => {
+	async function loadCompactState(compactParam: string): Promise<Partial<AppState> | null> {
+		try {
+			const decoded = compactEncoding.decodeState(compactParam);
+
+			// Convert compact format to AppState format
+			const appState: Partial<AppState> = {
+				names: decoded.names,
+				selection: Array.from({ length: decoded.names.length }, (_, i) => i), // Select all by default
+				forbiddenPairs: [],
+				assignmentHistory: []
+			};
+
+			// Convert flattened forbidden pairs back to tuple format
+			if (decoded.forbidden_pairs.length > 0) {
+				const pairTuples = [];
+				for (let i = 0; i < decoded.forbidden_pairs.length; i += 2) {
+					pairTuples.push({
+						index1: decoded.forbidden_pairs[i],
+						index2: decoded.forbidden_pairs[i + 1]
+					});
+				}
+				appState.forbiddenPairs = pairTuples;
+			}
+
+			// Convert flattened history back to nested format
+			if (decoded.history.length > 0 && decoded.names.length > 0) {
+				const historyRounds = [];
+				for (let i = 0; i < decoded.history.length; i += decoded.names.length) {
+					historyRounds.push(decoded.history.slice(i, i + decoded.names.length));
+				}
+				appState.assignmentHistory = historyRounds;
+			}
+
+			return appState;
+		} catch (e) {
+			devConsole.log('Compact state decoding failed:', e);
+			return null;
+		}
+	}
+
+	onMount(async (): Promise<void> => {
 		urlLoadingState.set(loadingUtils.createLoading('Loading saved state...'));
 
+		// Initialize WASM first
 		try {
-			const startWithParam = new URLSearchParams(window.location.search).get('startwith');
+			await init({});
+			wasmInitialized = true;
+		} catch (error) {
+			devConsole.error('Failed to initialize WASM in LoadState:', error);
+		}
 
-			if (startWithParam) {
-				const decodedData = versionedUrlUtils.decodeVersionedState(startWithParam);
+		try {
+			const urlParams = new URLSearchParams(window.location.search);
 
+			// Try compact state parameter first ('s=')
+			const compactParam = urlParams.get('s');
+			if (compactParam && wasmInitialized) {
+				const decodedData = await loadCompactState(compactParam);
 				if (decodedData) {
 					updateStoresFromParams(decodedData);
 					urlLoadingState.set(loadingUtils.createSuccess());
-				} else {
-					urlLoadingState.set(loadingUtils.createError('Failed to load saved state from URL'));
+					return;
 				}
-			} else {
-				urlLoadingState.set(loadingUtils.createSuccess());
 			}
+
+			// No state parameters found - this is normal
+			urlLoadingState.set(loadingUtils.createSuccess());
 		} catch (error) {
-			console.error('Error loading state from URL:', error);
+			devConsole.error('Error loading state from URL:', error);
 			urlLoadingState.set(loadingUtils.createError('Error loading saved state'));
 		}
 	});

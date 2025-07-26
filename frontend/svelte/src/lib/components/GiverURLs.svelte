@@ -8,19 +8,21 @@
 	import { history } from '$lib/stores/AssignmentHistory';
 	import { wasmLoadingState, assignmentLoadingState } from '$lib/stores/LoadingState';
 	import { assignmentUtils, urlUtils, loadingUtils } from '$lib/utils';
+	import { compactEncoding } from '$lib/compactEncoding';
 	import init, { process_assignment } from '$lib/wasm/rust_wasm.js';
 	import LoadingSpinner from './LoadingSpinner.svelte';
+	import { devConsole } from '$lib/devConsole';
 
 	const currentUrl = writable<string>('');
 
 	onMount(async () => {
 		try {
 			wasmLoadingState.set(loadingUtils.createLoading('Loading WebAssembly module...'));
-			await init();
+			await init({});
 			currentUrl.update(() => urlUtils.getBaseUrl());
 			wasmLoadingState.set(loadingUtils.createSuccess());
 		} catch (error) {
-			console.error('Failed to initialize WASM:', error);
+			devConsole.error('Failed to initialize WASM:', error);
 			wasmLoadingState.set(loadingUtils.createError('Failed to load WebAssembly module'));
 		}
 	});
@@ -60,7 +62,14 @@
 	});
 
 	function createMessageUrl(url: string, nameX: string, nameY: string): string {
-		return assignmentUtils.createAssignmentUrl(url, nameX, nameY);
+		// Use new compact encoding with base32 and 'm=' parameter
+		try {
+			return compactEncoding.createShareableUrl(url, nameX, nameY);
+		} catch (e) {
+			devConsole.warn('Compact encoding failed, falling back to JSON:', e);
+			// Fallback to JSON encoding
+			return assignmentUtils.createAssignmentUrlSync(url, nameX, nameY);
+		}
 	}
 
 	function createAssignment(): void {
@@ -103,7 +112,7 @@
 				return null;
 			});
 		} catch (error) {
-			console.error('Error creating assignment:', error);
+			devConsole.error('Error creating assignment:', error);
 			assignmentLoadingState.set(
 				loadingUtils.createError(
 					'A technical error occurred while generating the assignment. Please try again, or refresh the page if the problem persists.'
@@ -148,7 +157,7 @@
 			<div class="assignment-results">
 				<div class="results-header">
 					<h3 class="section-title">Assignment Links</h3>
-					<p class="section-description">Share these unique links with each participant</p>
+					<p class="results-description">Share these unique links with each participant</p>
 				</div>
 
 				<div class="link-grid" role="list" aria-label="Gift assignment links">
@@ -222,6 +231,7 @@
 		font-size: var(--font-size-base);
 		color: var(--color-text-muted);
 		max-width: 500px;
+		text-align: center;
 	}
 
 	.btn-large {
@@ -262,6 +272,13 @@
 		text-align: center;
 	}
 
+	.results-description {
+		margin: 0;
+		font-size: var(--font-size-base);
+		color: var(--color-text-muted);
+		text-align: center;
+	}
+
 	.link-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -282,13 +299,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
-		transition:
-			transform 0.15s ease,
-			box-shadow 0.15s ease;
+		transition: box-shadow 0.15s ease;
 	}
 
 	.link-card:hover {
-		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
 

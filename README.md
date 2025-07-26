@@ -1,9 +1,14 @@
-👤🎁🔄
+# Anon Gift Swop 🎁👤🔄
 
-## About
+A production-ready static website that creates fair gift exchange assignments with advanced constraint handling and forbidden pairing support.
 
-A static website that creates gift swop assignments and allows blacklisting of certain pairings from a list of user-provided names.
-The site generates a link to give to each person that states who they will be giving to.
+## Features
+
+- **Forbidden Pairings**: Block specific people from being paired together
+- **Assignment History**: Considers previous years to ensure variety over time
+- **Fully Client-Side**: No server required - runs entirely in your browser
+- **Shareable Links**: Generate unique URLs for each participant
+- **Onboarding Flow**: Guided setup for new users
 
 ## Frequently Asked Questions
 
@@ -12,6 +17,35 @@ The original creator of this project is British. It is also a slight nod to avoi
 
 ### Why not `secret santa`?
 This is to avoid religious bias.
+
+### Development
+```bash
+# Install global tools
+make setup-tools
+
+# Install dependencies
+make install
+
+# Start development server
+make dev
+
+# Run tests
+make test
+
+# Build for production
+make build
+```
+
+### Using the Application
+1. **Add Participants**: Enter names of people participating in the gift exchange
+2. **Set Restrictions**: Define forbidden pairings (e.g., spouses, family members)
+3. **Generate & Share**: Create assignments and share unique links with each participant
+
+### Technology Stack
+- **Frontend**: SvelteKit with TypeScript
+- **Core Logic**: Rust compiled to WebAssembly
+- **Testing**: Comprehensive property-based testing with proptest
+- **CI/CD**: GitHub Actions with automated testing and deployment
 
 ## Contributing
 

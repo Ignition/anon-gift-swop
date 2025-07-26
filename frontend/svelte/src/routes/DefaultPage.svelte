@@ -1,52 +1,60 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import LoadState from '$lib/components/LoadState.svelte';
 	import SaveState from '$lib/components/SaveState.svelte';
 	import ScrollableList from '$lib/components/ScrollableList.svelte';
 	import PairSelector from '$lib/components/PairSelector.svelte';
 	import GiverURLs from '$lib/components/GiverURLs.svelte';
 	import OnboardingFlow from '$lib/components/OnboardingFlow.svelte';
+	import { devConsole } from '$lib/devConsole';
 
 	// Check if user has seen onboarding before (persist in localStorage)
 	let showOnboarding = true;
+	let isLoaded = false;
 
-	try {
-		const hasSeenOnboarding = localStorage.getItem('gift-swap-onboarding-seen');
-		if (hasSeenOnboarding === 'true') {
-			showOnboarding = false;
+	onMount(() => {
+		try {
+			const hasSeenOnboarding = localStorage.getItem('gift-swap-onboarding-seen');
+			if (hasSeenOnboarding === 'true') {
+				showOnboarding = false;
+			}
+		} catch {
+			// If localStorage is not available, show onboarding by default
+			devConsole.log('localStorage not available, showing onboarding by default');
 		}
-	} catch {
-		// If localStorage is not available, show onboarding by default
-		console.log('localStorage not available, showing onboarding by default');
-	}
+		isLoaded = true;
+	});
 </script>
 
-{#if showOnboarding}
-	<OnboardingFlow bind:showOnboarding />
+{#if isLoaded}
+	{#if showOnboarding}
+		<OnboardingFlow bind:showOnboarding />
+	{/if}
+
+	<div class="app-content">
+		<div class="section-grid">
+			<section class="card">
+				<h2 class="card-title">1. Add Participants</h2>
+				<ScrollableList />
+			</section>
+
+			<section class="card">
+				<h2 class="card-title">2. Set Restrictions</h2>
+				<PairSelector />
+			</section>
+
+			<section class="card full-width">
+				<h2 class="card-title">3. Generate & Share</h2>
+				<GiverURLs />
+			</section>
+		</div>
+
+		<div class="utility-bar">
+			<SaveState />
+			<LoadState />
+		</div>
+	</div>
 {/if}
-
-<div class="app-content">
-	<div class="section-grid">
-		<section class="card">
-			<h2 class="card-title">1. Add Participants</h2>
-			<ScrollableList />
-		</section>
-
-		<section class="card">
-			<h2 class="card-title">2. Set Restrictions</h2>
-			<PairSelector />
-		</section>
-
-		<section class="card full-width">
-			<h2 class="card-title">3. Generate & Share</h2>
-			<GiverURLs />
-		</section>
-	</div>
-
-	<div class="utility-bar">
-		<SaveState />
-		<LoadState />
-	</div>
-</div>
 
 <style>
 	.app-content {

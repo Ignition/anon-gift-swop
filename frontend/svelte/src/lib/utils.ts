@@ -1,6 +1,7 @@
 /**
  * Common utility functions for the Anonymous Gift Swap application
  */
+import { devConsole } from './devConsole';
 
 // Base64 encoding/decoding utilities
 export const base64Utils = {
@@ -12,7 +13,7 @@ export const base64Utils = {
 			const jsonString = JSON.stringify(obj);
 			return btoa(jsonString);
 		} catch (e) {
-			console.error('Failed to encode JSON to Base64:', e);
+			devConsole.error('Failed to encode JSON to Base64:', e);
 			return null;
 		}
 	},
@@ -25,7 +26,7 @@ export const base64Utils = {
 			const jsonString = atob(base64);
 			return JSON.parse(jsonString);
 		} catch (e) {
-			console.error('Failed to decode or parse the base64 string:', e);
+			devConsole.error('Failed to decode or parse the base64 string:', e);
 			return null;
 		}
 	},
@@ -37,7 +38,7 @@ export const base64Utils = {
 		try {
 			return btoa(text);
 		} catch (e) {
-			console.error('Failed to encode string to Base64:', e);
+			devConsole.error('Failed to encode string to Base64:', e);
 			return null;
 		}
 	},
@@ -49,7 +50,7 @@ export const base64Utils = {
 		try {
 			return atob(base64);
 		} catch (e) {
-			console.error('Failed to decode Base64 string:', e);
+			devConsole.error('Failed to decode Base64 string:', e);
 			return null;
 		}
 	}
@@ -96,9 +97,12 @@ export const urlUtils = {
 		if (!encodedMessage) {
 			throw new Error('Failed to encode message');
 		}
-		return this.setParam(baseUrl, 'msg', encodedMessage);
+		return this.setParam(baseUrl, 'm', encodedMessage);
 	}
 };
+
+// Import compact encoding at the top of the file when available
+let compactEncodingModule: typeof import('./compactEncoding') | null = null;
 
 // Gift assignment utilities
 export const assignmentUtils = {
@@ -113,9 +117,45 @@ export const assignmentUtils = {
 	},
 
 	/**
-	 * Creates a shareable assignment URL (versioned)
+	 * Creates a shareable assignment URL
+	 * Uses new compact encoding if available, falls back to JSON
 	 */
-	createAssignmentUrl(baseUrl: string, giverName: string, receiverName: string): string {
+	async createAssignmentUrl(
+		baseUrl: string,
+		giverName: string,
+		receiverName: string
+	): Promise<string> {
+		// Try to use compact encoding if available
+		if (!compactEncodingModule) {
+			try {
+				compactEncodingModule = await import('./compactEncoding');
+			} catch {
+				// Compact encoding not available, fall back to JSON
+			}
+		}
+
+		if (compactEncodingModule) {
+			try {
+				return compactEncodingModule.compactEncoding.createShareableUrl(
+					baseUrl,
+					giverName,
+					receiverName
+				);
+			} catch (e) {
+				devConsole.warn('Failed to use compact encoding, falling back to JSON:', e);
+			}
+		}
+
+		// Fallback to JSON encoding
+		const payload = this.createAssignmentPayload(giverName, receiverName);
+		return versionedUrlUtils.createVersionedMessageUrl(baseUrl, payload);
+	},
+
+	/**
+	 * Creates a shareable assignment URL (sync version for compatibility)
+	 * Always uses JSON encoding
+	 */
+	createAssignmentUrlSync(baseUrl: string, giverName: string, receiverName: string): string {
 		const payload = this.createAssignmentPayload(giverName, receiverName);
 		return versionedUrlUtils.createVersionedMessageUrl(baseUrl, payload);
 	}
@@ -155,7 +195,7 @@ export const errorUtils = {
 			return operation();
 		} catch (error) {
 			if (errorMessage) {
-				console.error(errorMessage, error);
+				devConsole.error(errorMessage, error);
 			}
 			return defaultValue;
 		}
@@ -226,7 +266,7 @@ export const versionedUrlUtils = {
 		if (!encodedPayload) {
 			throw new Error('Failed to encode versioned message payload');
 		}
-		return urlUtils.setParam(baseUrl, 'msg', encodedPayload);
+		return urlUtils.setParam(baseUrl, 'm', encodedPayload);
 	},
 
 	/**
@@ -238,7 +278,7 @@ export const versionedUrlUtils = {
 		if (!encodedState) {
 			throw new Error('Failed to encode versioned state');
 		}
-		return urlUtils.setParam(baseUrl, 'startwith', encodedState);
+		return urlUtils.setParam(baseUrl, 's', encodedState);
 	},
 
 	/**
